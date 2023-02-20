@@ -63,6 +63,8 @@ urlpatterns = [
 
     path('adminProductView',ad.adminProductView,name='adminProductView'),
     path('adminProductEditView',ad.adminProductEditView,name='adminProductEditView'),
+    path('siblingProductList',ad.siblingProductList,name='siblingProductList'),
+    path('admin_product_edit_view',ad.admin_product_edit_view,name='admin_product_edit_view'),
     
 
     #----------------------order pages--------------------------------

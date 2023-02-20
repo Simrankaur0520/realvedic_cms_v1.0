@@ -75,15 +75,27 @@ def adminProductView(request,format=None):
 def adminProductEditView(request,format=None):
     #prod_id=request.data['token']
     Prod_id=10
+    sibling_prod_list=[]
     variant_data=[]
     res={}
     meta_fields_dict={}
-    meta_fields=[]
     sibling_product={}
+    mock_id=0
     #-------------------------------------------------------------
     prods_obj=Product_data.objects.values()
     prod=prods_obj.filter(id=Prod_id).values()
     single_prod_obj=prod[0]
+    #-----------------------------------------------------------
+    for i in prods_obj:
+        img=i['image'].split(',')
+        prods={
+            'id':i['id'],
+            'title':i["title"],
+            "image":img[0],
+            "category":i["category"],
+           
+        }
+        sibling_prod_list.append(prods)
     #-----------------------------------------------------------
     weights=single_prod_obj['size'].split('|')
     price=single_prod_obj['price'].split('|')
@@ -93,47 +105,66 @@ def adminProductEditView(request,format=None):
     siblingprod=prods_obj.filter(title=sibling).values()
     sibling_product['product_id']=siblingprod[0]['id']
     sibling_product['product_name']=siblingprod[0]['title']
-    sibling_product['img']=siblingprod[0]['image']
+    sibling_product['img']=siblingprod[0]['image'].split(',')[0]
     sibling_product['category']=siblingprod[0]['category']
     
     #-----------------------------------------------------------
     nutrition=single_prod_obj['nutrition'].split('|')
     nutritional_info=[
         {
+        "id":0,
        "n_name": "Total Fat",
-       "n_value": nutrition[0],
+       "n_value": nutrition[0].split(' ')[0],
        "n_unit": "g"
      },
      {
+        "id":1,
        "n_name": "Protien",
-       "n_value": nutrition[1],
+       "n_value": nutrition[1].split(' ')[0],
        "n_unit": "g"
      },
      {
+        "id":2,
        "n_name": "Carbohydrate",
-       "n_value": nutrition[2],
+       "n_value": nutrition[2].split(' ')[0],
        "n_unit": "g"
      },
      {
+        "id":3,
        "n_name": "Energy",
-       "n_value": nutrition[3],
+       "n_value": nutrition[3].split(' ')[0],
        "n_unit": "kcal"
      }]
     for i in range(len(weights)):
         variants_data= {
+            'id':mock_id,
             'variant_name':weights[i],
             'price':price[i],
             'quantity':"",
             'sku':sku[i],
 
         }
+        mock_id=mock_id+1
         variant_data.append(variants_data)
     #--------------------------------------------------------
+    meta_fields_dict=[{
+        'm_name':'Benefits',
+        'm_value':single_prod_obj['benefits'] 
+        },
+        {
+        'm_name':'Ingredients',
+        'm_value':single_prod_obj['ingredients'] 
+        },
+        {
+        'm_name':'How to use',
+        'm_value':single_prod_obj['how_to_use'] 
+        },
+        {
+        'm_name':'How we make it',
+        'm_value':single_prod_obj['how_we_make_it'] 
+        }
+        ]
    
-    meta_fields_dict['benefits']=single_prod_obj['benefits']        
-    meta_fields_dict['ingredients']=single_prod_obj['ingredients']
-    meta_fields_dict['how_to_use']=single_prod_obj['how_to_use']
-    meta_fields_dict['how_we_make_it']=single_prod_obj['how_we_make_it']
 
 #-----------------------------------------------------------    
     res['images']=single_prod_obj['image'].split(',')
@@ -151,28 +182,34 @@ def adminProductEditView(request,format=None):
     prod_category=prods_obj.values('category','HSN').distinct()
     #res['variant_dataa']=variants_data
     res['category_list']=prod_category
+    res['ProductList']=sibling_prod_list
+
 
     #-------------------------------
     return Response(res)
-
+@api_view((['POST']))
 def admin_product_edit_view(request,format=None):
-    title=request.data['name']
-    id=request.data['id']
-    category=request.data['category']
-    hsn=request.data['hsn']
-    images=request.data['images']
-    status=request.data['status']
-    meta_fields=request.data['meta_fields']
-    sibling_product=request.data['sibling_product']
-    variant_data=request.data['variant_data']
-    variant_name = (map(itemgetter('variant_name'), variant_data))
+    data=request.data
+    
+    images=data['images']
+    id=data['id']
+    category=data['category']
+    hsn=data['hsn']
+    status=data['status']
+    meta_fields=data['meta_fields']
+    sibling_product=data['sibling_product']
+    variant_data=data['variant_data']
+    '''variant_name = (map(itemgetter('variant_name'), variant_data))
     size = '|'.join(list(variant_name))
     price_get = (map(itemgetter('price'), variant_data))
     price = '|'.join(list(price_get))
     SKU_get = (map(itemgetter('Sku'), variant_data))
     SKU = '|'.join(list(SKU_get))
+    #----------------------------------------------------------
+    meta_fields = dict(map(itemgetter('m_name','m_value'),meta_fields ))'''
+
     
-    try:
+    '''try:
         Product_data.objects.filter(id=id).update(title=title,
                                                 category=category,
                                                 HSN=hsn,
@@ -198,9 +235,34 @@ def admin_product_edit_view(request,format=None):
         res={
             'status':False,
             'message':"Something went wrong"
-        }    
+        }'''
+    
+    print(images)
+    print(id)
+    print(category)
+    print(hsn)
+    print(status)
+    print(meta_fields)
+    print(sibling_product)
+    print(variant_data)
+   
 
-        return Response(res)
+    return Response(data)
 
 
+@api_view(['GET'])
+def siblingProductList(request,format=None):
+    prod_list=[]
+    prod_obj=Product_data.objects.values('id','title','image','category')
+    for i in prod_obj:
+        img=i['image'].split(',')
+        prods={
+            'id':i['id'],
+            'title':i["title"],
+            "image":img[0],
+            "category":i["category"],
+           
+        }
+        prod_list.append(prods)
+    return Response(prod_list)
 
